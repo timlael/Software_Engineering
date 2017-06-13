@@ -1,0 +1,13 @@
+﻿For Homework 3, I created the program using JavaScript, but did not load it on the web.
+Please use W3 JavaScript tutorial system to run my program.
+
+
+To Run:
+Default values of 10w x 10h and 10 runs may be used by simply pressing "Run SImulation" button.
+
+For more interesting output, change default values using the supplied text input boxes.
+Accept entries by pressing the "Accept Input" button, then run the simulation by pressing "Run Simulation"
+
+
+Thank you,
+Tim M. Lael

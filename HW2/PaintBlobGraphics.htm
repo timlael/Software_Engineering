@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<!-- Keith W. Miller, 23 January 2016                                                   -->
+<!-- Simple JavaScript showing how to draw graphics, and pause execution, on a webpage. -->
+
+<html>
+<body>
+
+<!-- Set up a rectangular area on the screen, or display an error message.              -->
+<canvas id="myCanvas" width="200" height="100" style="border:1px solid #c3c3c3;">
+Your browser does not support the HTML5 canvas tag.
+</canvas>
+
+<script>
+// Draw a red rectangle inside the canvas already established above.
+var c = document.getElementById("myCanvas");
+var ctx = c.getContext("2d");
+ctx.fillStyle = "#FF0000";
+ctx.fillRect(0,0,150,75);
+
+// This function puts a green, 10 pixel square on a random location on the canvas established above.
+function spotMaker() {
+   var x = Math.random() * 190;
+   var y = Math.random() * 90;
+
+   ctx.fillStyle = "#00FF00";
+   ctx.fillRect(x,y,10,10);
+   }
+
+// This loop calls spotMaker() repeatedly, pausing each execution a little longer.
+for (var i = 0; i < 10; i++){
+   setTimeout("spotMaker()",(i*1000));
+   }
+
+</script>
+
+</body>
+</html>

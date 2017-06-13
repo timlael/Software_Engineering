@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<!-- Tim M. Lael, 25 August 2016
+	CS 4500 e01 Homework assignment 1.
+-->
+
+<html>
+<body onload="doSimulation()"> <!-- Run sim on load -->
+
+<h1> Randomly moving on a 10 x 10 grid</h1>
+
+<!-- Explanation of features/purpose to user -->
+<h4>
+<p style="font-family:courier;">The following simulates pseudo-random movement of a marker on a 10 x 10 grid.
+<br><br>
+The marker will start in the lower left corner <span style="color:#00FF00;">[0,0]</span> with its goal destination being the upper right corner <span style="color:#00FF00;">[9,9]</span>.
+<br><br>
+Random movements are generated. These movements are each one cell in the direction of either up, down, left or right.
+<br><br>
+If the random movement remains on the grid, the marker is moved, a step is counted and the newly visited cell of the grid records a visit.
+<br><br>
+If the movement would place the marker off of the grid, the marker remains in its current position prior to the illegal movement, a step is counted and the last valid cell records another visit.
+<br><br>
+Upon reaching the upper right cell or 1,000,000 movements (whichever occurs first) the simulation is completed. If both occur at the same step, this will be indicated on the screen.
+<br>
+</p>
+</h4>
+<p>The simulation is run when the page loads.
+<br>
+Whenever "Click here to re-run" is pressed, a new simulation is started.
+Statistics displayed upon completion are:
+<br>
+<ol>
+<li>Total number of steps taken
+<li>Minimum number of visits to any given cell
+<li>Maximum number of visits to any given cell
+</ol>
+</p>
+
+<button onclick="doSimulation()">Click here to re-run.</button> <!-- Button to run simulation again without page reload -->
+
+
+
+<script>
+
+function doSimulation(){  								//The simulation function begins a new simulation each time it is called (variables are re-initialized to starting values)
+	var cellCounts = [];										// 2D array implementation to represent 10x10 grid
+	cellCounts[0] = [0,0,0,0,0,0,0,0,0,0];	// each of the array positions serves as a visit counter
+	cellCounts[1] = [0,0,0,0,0,0,0,0,0,0];	// all are initialized to 0
+	cellCounts[2] = [0,0,0,0,0,0,0,0,0,0];
+	cellCounts[3] = [0,0,0,0,0,0,0,0,0,0];
+	cellCounts[4] = [0,0,0,0,0,0,0,0,0,0];
+	cellCounts[5] = [0,0,0,0,0,0,0,0,0,0];
+	cellCounts[6] = [0,0,0,0,0,0,0,0,0,0];
+	cellCounts[7] = [0,0,0,0,0,0,0,0,0,0];
+	cellCounts[8] = [0,0,0,0,0,0,0,0,0,0];
+	cellCounts[9] = [0,0,0,0,0,0,0,0,0,0];
+	var steps = 0;											// counter for total number of steps
+	var x = 0;													// x coordinate - used for positional tracking
+	var y = 0;													// y coordinate - used for positional tracking
+	var min = 9999999;									// minimum visits - used for tracking cell with fewest visits
+	var max = 0;												// maximum visits - used for tracking cell with most visits
+	var direction = 0;									// direction of movement (1=North/Up, 2=East/Right, 3=South/Down, 4=West/Left)
+	var destination = false;
+	var bothMet = false;								// boolean flag indicating simultaneous 1,000,000th step and [9,9]
+	cellCounts[0][0] = 1; 							// starting in lower left inherently gives that cell a count of 1
+
+
+	for (i = 0; i < 1000000; i++){
+			direction = Math.floor((1 + (Math.random() * 4)));
+			if (direction == 1){ 						// North/Up movement
+				if(y < 9){										// moving up while not at the top is allowed
+					y++;												// y coordinate adjusted to mimic movement
+					steps++;										// step counted
+					cellCounts[x][y]++;					// new cell counter incremented to reflect visit
+				}
+				else{													// no upward movement allowed (from y = 9)
+					steps++;
+					cellCounts[x][y]++;
+				}
+			}
+			else if (direction == 2){ 			// East/Right movement
+				if(x < 9){										// moving right while not at the far right is allowed
+					x++;
+					steps++;
+					cellCounts[x][y]++;
+				}
+				else{													// no rightward movement allowed (from x = 9)
+					steps++;
+					cellCounts[x][y]++;
+				}
+			}
+			else if (direction == 3){ 			// South/Down movement
+				if (y == 0){									// no downward movement allowed (from y = 0)
+					steps++;
+					cellCounts[x][y]++;
+				}
+				else if(y > 0){								// moving down while not at the bottom is allowed
+					y--;
+					steps++;
+					cellCounts[x][y]++;
+				}
+			}
+			else if (direction == 4){ 			// West/Left movement
+				if (x == 0){									// movind left while at the far left is not allowed
+					steps++;
+					cellCounts[x][y]++;
+				}
+				else {												// moving left while not at the far left is allowed
+					x--;
+					steps++;
+					cellCounts[x][y]++;
+				}
+			}
+			if (x == 9 && y == 9){					// if the marker reaches the upper right corner...
+				destination = true;
+				break;												// jump out of loop
+			}
+			if (steps == 1000000 && x == 9 && y == 9){	// if the one millionth step lands on [9,9]
+				bothMet = true;								// set flag indicating such
+			}
+	}
+
+// after loop get min and max
+	for (i = 0; i < 10; i++){						// loop through 2D array
+		for (j = 0; j < 10; j++){
+			if (cellCounts[i][j] <= min){		//if cell counter is less than or equal to minimum
+				min = cellCounts[i][j];				// accept new minimum
+			}
+			if (cellCounts[i][j] >= max){		// if cell counter is greater than or equal to maximum
+				max = cellCounts[i][j];				// accept new maximum
+			}
+		}
+	}
+// if 1,000,000 and [9,9] are simultaneous create the element for the html
+if (bothMet == true){ // if flag indicating [9,9] and one millionth step is true, write message to document
+	document.getElementById("finishCondition").innerHTML = "1,000,000th step landed on [" + x + "," + y +"]!";
+}
+else if (steps == 1000000) {
+	document.getElementById("finishCondition").innerHTML = "Took 1,000,000 steps landing on [" + x + "," + y +"] before destination was reached!";
+}
+else {
+	document.getElementById("finishCondition").innerHTML = "Reched destination of [" + x + "," + y +"] before 1,000,000 steps!";
+
+}
+// create output elements which normally appear
+	document.getElementById("steps").innerHTML = steps; // write number of steps to document
+	document.getElementById("min").innerHTML = min;			// write minimum visits to document
+	document.getElementById("max").innerHTML = max;			// write maximum visits to document
+}
+
+</script>
+
+<p>
+<br>
+<h2 style="color:#FF0000;" id="finishCondition"> </h2> 	<!-- display 1,000,000/[9,9] indicator in red if created by function -->
+<br><br>
+Steps taken:																		<!-- display steps taken -->
+<br>
+<element id="steps"> </element>
+<br><br>
+Minimum number of steps taken in any one cell:	<!-- display minimum -->
+<br>
+<element id="min"> </element>
+<br><br>
+Maximum number of steps taken in any one cell:	<!-- display maximum -->
+<br>
+<element id="max"> </element>
+<br><br>
+</p>
+
+</body>
+</html>

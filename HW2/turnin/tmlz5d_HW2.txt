@@ -1,0 +1,8 @@
+For Homework 2, I created the program using JavaScript, but did not load it on the web.
+Please use W3 JavaScript tutorial system to run my program.
+
+Note:
+The refresh button does not function properly on W3. It reloads the window in the button’s active frame. This does, however, function properly if the entire text of the program is saved as html and opened in a browser.
+
+Thank you,
+Tim M. Lael

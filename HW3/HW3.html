@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<!--
+  Tim M. Lael, 07 September 2016
+	CS 4500 e01 Homework assignment 3.
+  Group members - Brady Kedge, Stephanie Bucella, Sachin Pandey and myself
+	This program is a modified extension of homework 2.
+  There are three values accepted as input from the user. X (width), Y (height) and number of runs to perform.
+  All fields are validated for proper input and each has a default in case tyhe user was to run the simulation before providing input.
+	See text in html body " **Explanation of features/purpose to user** " for specific operational detail.
+  See comments in script/function bodies for programmatic detail
+  Besides various data items displayed upon completion, a histogram of steps taken and one showing maximum cell visits per run will also be presented.
+-->
+<style>
+.chartSlides {
+  display: none;
+}
+.btn {
+  border: none;
+  display: inline-block;
+  outline: 0;
+  padding: 6px 16px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-decoration: none!important;
+  color: #fff;
+  background-color: #000;
+  text-align: center;
+  cursor: pointer;
+  white-space: nowrap
+}
+.red {
+  color: #fff!important;
+  background-color: #f44336!important
+}
+</style>
+<body bgcolor="#000000">
+  <a name="accept"></a>
+  <font color="f1f1f1">
+  <h1> Randomly moving on a  <element id="gridWidth"></element>w x <element id="gridHeight"></element>h grid</h1>
+
+<!--
+**Explanation of features/purpose to user**
+DOM elements used to allow dynamic variuable use
+HTML text explains usage to end-user
+-->
+  <h4>
+    <p style="font-family: arial;">
+    <!--
+    Initial explanation of the initial grid marker movement from HW 1 and 2
+    DOM elements are used to display information which may be varied by user input or constant changes
+    -->
+      The following simulates pseudo-random movement of a marker on a <element id="gridWidth1"></element>w x <element id="gridHeight1"></element>h grid.
+      <br>
+      The marker will start in the lower left corner <span style="color:#00FF00;">[<element id="MINXIDX"></element>,<element id="MINYIDX"></element>]</span>
+      with its goal destination being the upper right corner <span style="color:#00FF00;">[<element id="maxXIdx"></element>,<element id="maxYIdx"></element>]</span>.
+      <br>
+      Random movements are generated. These movements are each one cell in the direction of either up, down, left or right.
+      <br>
+      If the random movement remains on the grid, the marker is moved, a step is counted and the newly visited cell of the grid records a visit.
+      <br>
+      If the movement would place the marker off of the grid, the marker remains in its current position prior to the illegal movement, a step is counted and the last valid cell records another visit.
+      <br>
+      Upon reaching the upper right cell <span style="color:#00FF00;">[<element id="maxXIdx1"></element>,<element id="maxYIdx1"></element>]</span> or <element id="maxSteps"></element> movements (whichever occurs first) the simulation is completed. If both occur at the same step, this will be indicated on the screen.
+      <br><br>
+    </p>
+  </h4>
+    <p style="font-family: arial;">
+      <!-- Explanation new to HW 3 -->
+        <u>The defaults loaded with the page may be used to run 10 simulations on a 10w x 10h grid.</u>
+      <br><br>
+      If the user wishes, they may change the defaults for grid width (X), grid height (Y) and the number of runs to perform by using the text entry boxes below.
+      <br>
+      If a single field value (X, Y or number of walks) is input, then input must be provided for all before proceeding.
+      <br><br>
+      "Accept Input" must be used to store input for use.
+      <br><br>
+      If invalid input is detected, the "Accept Input" and "Run Simulation" buttons will be disabled until valid input is provided for all three fields
+    </p>
+  </h4>
+    <p>
+    <!--
+    input fields to allow user width, height and number of runs to be input
+    Data is validated onchange and default values equal to variable initializations are used
+    -->
+      <b style="font-family: arial;">
+        X value (width [1 - 2000]): <span style="padding-left:100px;"><input type="text" id="usrX" onchange="validateX()" value= 10></input></span><br>
+        Y value (height [1 - 2000]): <span style="padding-left:96px;"><input type="text" id="usrY" onchange="validateY()" value= 10></input></span><br>
+        Number of walks to perform [1 - 5000]: <span style="padding-left:10px;"><input type="text" id="usrNum" onchange="validateNum()" value= 10></span></input><br>
+      </b>
+      <!-- Submit button to accept user input -->
+      <br>
+      <button id="submit" onclick="clearFeedback(); clearLowerDOM(); getInput();" style="background-color:lightblue">Accept Input</button>
+        <h5>** Be aware that large grid sizes will require much more time to perform many walks.<br>
+          (e.g. 500w x 500h can take 11 minutes or more to perform 5000 walks on average hardware while 100w x 100h will only take approximately 45 seconds to run 5000 walks.)</h5>
+    <br>
+    <!-- data validation errors displayed to user if needed -->
+    <h3 style="color:#FF0000;" id="xValidation"></h3>
+    <h3 style="color:#FF0000;" id="yValidation"></h3>
+    <h3 style="color:#FF0000;" id="numValidation"></h3>
+    <!-- data submission status feedback displayed -->
+    <h3 style="color:#FF0000;" id="submitStatusErr"></h3>
+    <h3 style="color:#FF0000;" id="submitStatusWarn"></h3>
+    <h3 style="color:#00FF00;" id="submitStatusOk"></h3>
+    <p style="font-family:arial;">
+      Whenever "Run Simulation" is pressed, a new simulation is started and the simulation will be run on a <element id="gridWidth2"></element>w x <element id="gridHeight2"></element>h grid
+      for <element id="runs"></element> run[s].
+      <br><br>
+      After the simulation is run, the two histograms below are populated with data.
+      <br>
+      The first shows the distribution of steps taken across the allowable range of steps (0 - 1,000,000). For that reason, runs exceeding 1,000,000 steps are omitted from the histogram.
+      <br><br>
+      The second histogram presents the maximum number of visits that any cell recorded during each run. This histogram includes data from ALL runs.
+      <br><br>
+      Runs statistics are displayed with the histograms.
+      <br>
+      <a name="run"></a>
+      Statistics displayed upon completion are:
+      <br>
+      <ul>
+        <li>Slide 1
+          <ul>
+            <li>Histogram of steps taken
+          </ul>
+        <li>Slide 2
+          <ul>
+            <li>Histogram of maximum cell visits
+          </ul>
+        <li>Slide 3 - Runs
+          <ul>
+            <li>Runs performed
+            <li>Number of runs exceeding allowable steps limit
+          </ul>
+        <li>Slide 4 - Step Numbers Stats
+          <ul>
+            <li>Steps taken this run
+            <li>Maximum steps taken by a run
+            <li>Total steps taken over all runs
+            <li>Average steps per run
+          </ul>
+        <li>Slide 5 - Step Minimums Stats
+          <ul>
+            <li>Minimum number of steps taken in any one cell this run
+            <li>Average of minimum steps in any one cell over all runs
+            <li>Minimum number of steps taken in any one cell by a run
+          </ul>
+        <li>Slide 6 - Step Maximums Stats
+          <ul>
+            <li>Maximum number of steps taken in any one cell this run
+            <li>Average of maximum steps in any one cell over all runs
+            <li>Maximum number of steps taken in any one cell by a run
+          </ul>
+        </ul>
+    </p>
+    <br><br>
+    If larger inputs are used, please be patient after the "Run Simulation" button is pressed.
+    <br>
+    When complete, a message will be displayed along with the data.
+    <br><br>
+    <!-- "run" button to begin simulation -->
+    <button id="run" onClick="clearFeedback(); clearLowerDOM(); doSimulation();"style="background-color:lightgreen">Run Simulation</button>
+    <br>
+    <h3><b><element style="color:#00FF00;" id="complete"></element></b></h3>
+    <br><br>
+<script>
+/* Global constant/variable/object declaration */
+/* varied with user input */
+var runs = {value: 10};                         // runs to be performad (default 10)
+var height = {value: 10};										    // grid height limit (default 10)
+var width = {value: 10};											  // grid width limit (default 10)
+/* indirectly varied */
+var maxXIdx = {value: width.value - 1};					// maximum x index (varies based off of width (default 9))
+var maxYIdx = {value: height.value - 1};				// maximum y index (varies based off of height (default 9))
+/* end varied */
+var steps = {value: 0};											    // counter for total number of steps
+var stepCounter = [];                           // array to hold step count for each run
+var maxSteps = {value: 1000000};							  // maximum allowable number of steps (default 1000000)
+var overallMin = {value: 0};                    // overallMin used to store the minimum steps taken by any run
+var minCounter = [];                            // array to hold minimum visit values for each run
+var overallMax = {value: 0};                    // overallMax used to store the maximum steps taken by any run
+var maxCounter = [];                            // array to hold maximum visit values for each run
+var overallAvg = {value: 0};                    // overallAvg used to store the average of all steps taken
+var overMaxSteps = {value: 0};                  // overMaxSteps used to count runs which exceed maxSteps limit
+var xCoord = {value: 0};											  // x coordinate - used for positional tracking
+var yCoord = {value: 0};											  // y coordinate - used for positional tracking
+var cellCounts = [];								            // array for 2D implementation to represent variable sized grid
+var slideIndex = 0;                             // index for displaying histogram slideshow
+const MINXIDX = 0;									            // minimum x index CONSTANT
+const MINYIDX = 0;									            // minimum y index CONSTANT
+const MININTINPUT = 1;                          // minimum allowable integer for user input (used for X, Y and runs input)
+const MAXXYINPUT = 2000;                        // maximum allowable integer for user X and Y input
+const MAXRUNSINPUT = 5000;                      // maximum allowable integer  for user runs input
+/* End global declarations */
+
+/*
+populate DOM elements used in initial html explanation of features/purpose to user above
+*/
+document.getElementById("maxSteps").innerHTML = maxSteps.value.toLocaleString();			  // write initial maximum allowable number of steps to document
+document.getElementById("gridHeight").innerHTML = height.value;				                  // write initial grid height to document
+document.getElementById("gridWidth").innerHTML = width.value;					                  // write initial grid width to document
+document.getElementById("gridHeight1").innerHTML = height.value;				                // write initial grid height to document
+document.getElementById("gridWidth1").innerHTML = width.value;					                // write initial grid width to document
+document.getElementById("gridHeight2").innerHTML = height.value;				                // write initial grid height to document
+document.getElementById("gridWidth2").innerHTML = width.value;					                // write initial grid width to document
+document.getElementById("maxXIdx").innerHTML = maxXIdx.value;														// write initial maximum x index to document
+document.getElementById("maxYIdx").innerHTML = maxYIdx.value;														// write initial maximum y index to document
+document.getElementById("maxXIdx1").innerHTML = maxXIdx.value;													// write initial maximum x index to document
+document.getElementById("maxYIdx1").innerHTML = maxYIdx.value;													// write initial maximum y index to document
+document.getElementById("MINXIDX").innerHTML = MINXIDX;													        // write initial minimum x index to document
+document.getElementById("MINYIDX").innerHTML = MINYIDX;													        // write initial minimum y index to document
+document.getElementById("runs").innerHTML = runs.value;														      // write initial runs to document
+/*
+End of initial DOM element population
+*/
+
+/*
+getInput function to grab input from text fields and populate DOM elements pertaining
+to those elements if changed. Final input validation also takes place within before
+variables are changed to input values. Feedback on input submission is provided.
+*/
+function getInput(){
+  if (validateX() && validateY() && validateNum()){                                   // if all input values pass validation
+    document.getElementById("run").disabled = false;                                  // enable "Run Simulation" button
+    document.getElementById("submit").disabled = false;                               // enable "Accept Input" button
+
+    /* set variables to input values */
+    runs.value = document.getElementById("usrNum").value;
+    height.value = document.getElementById("usrY").value;
+    width.value = document.getElementById("usrX").value;
+    /* Adjust variables dependent upon input */
+    maxXIdx.value = document.getElementById("usrX").value - 1;
+    maxYIdx.value = document.getElementById("usrY").value - 1;
+
+    /* Write new values to appropriate DOM elements */
+    document.getElementById("gridHeight").innerHTML = height.value;                 				// write newest grid height to document
+    document.getElementById("gridWidth").innerHTML = width.value;					                  // write newest grid width to document
+    document.getElementById("gridHeight1").innerHTML = height.value;				                // write newest grid height to document
+    document.getElementById("gridWidth1").innerHTML = width.value;					                // write newest grid width to document
+    document.getElementById("gridHeight2").innerHTML = height.value;				                // write newest grid height to document
+    document.getElementById("gridWidth2").innerHTML = width.value;					                // write newest grid width to document
+    document.getElementById("maxXIdx").innerHTML = maxXIdx.value;													  // write newest maximum x index to document
+    document.getElementById("maxYIdx").innerHTML = maxYIdx.value;														// write newest maximum y index to document
+    document.getElementById("maxXIdx1").innerHTML = maxXIdx.value;													// write newest maximum x index to document
+    document.getElementById("maxYIdx1").innerHTML = maxYIdx.value;													// write newest maximum y index to document
+    document.getElementById("runs").innerHTML = runs.value;                                 // write newest runs to document
+    /* Provide submission feedback on success via DOM elements*/
+    /* Accept and be kind and warn user of excessive inputs */                              // all below will work, but wait is excessive to me
+    if (((height.value > 99 && width.value > 99) && runs.value > 3999) ||                   // height and width 100+ while 4000+ runs
+        ((height.value > 149 && width.value > 149) && runs.value > 2999) ||                 // height and width 150+ while 3000+ runs
+        ((height.value > 199 && width.value > 199) && runs.value > 1999) ||                 // height and width 200+ while 2000+ runs
+        ((height.value > 249 && width.value > 249) && runs.value > 999) ||                  // height and width 250+ while 1000+ runs
+        ((height.value > 499 && width.value > 499) && runs.value > 499) ||                  // height and width 500+ while 500+ runs
+        ((height.value > 4 && width.value > 499) && runs.value > 999) ||                    // height 5+ and width 500+ while 1000+ runs
+        ((height.value > 499 && width.value > 4) && runs.value > 999) ||                    // height 500+ and width 5+ while 1000+ runs
+        ((height.value > 499 || width.value > 499) && runs.value > 1999 )){                 // height or width 1000+ while 2000+ runs
+      document.getElementById("submitStatusErr").innerHTML = "";
+      document.getElementById("submitStatusOk").innerHTML = "";
+      document.getElementById("submitStatusWarn").innerHTML = "Input accepted. Large inputs like these may cause excessive running time";
+      window.location.href = "#accept";
+    }
+    else {
+      /* normal inputs get normal message */
+      document.getElementById("submitStatusErr").innerHTML = "";
+      document.getElementById("submitStatusWarn").innerHTML = "";
+      document.getElementById("submitStatusOk").innerHTML = "Input accepted";
+      window.location.href = "#run";
+    }
+  }
+  else {
+    /* Provide submission feedback on error via DOM elements*/
+    document.getElementById("submitStatusOk").innerHTML = "";
+    document.getElementById("submitStatusWarn").innerHTML = "";
+    document.getElementById("submitStatusErr").innerHTML = "Input error";
+    window.location.href = "#accept";
+  }
+}
+/* End getInput function */
+
+/*
+Begin doSimulation function
+Master function called when "Run Simulation" is pressed.
+doSimulation function begins a new simulation each time it is called (variables are re-initialized to starting values)
+*/
+function doSimulation(){
+  var stats;
+  initRunStats();                                                                      // initialize arrays to hold individual run stats
+  for (i = 0; i < runs.value; i++){                                                    // loop through until all specified runs are completed
+    initArray(); 											                                                 // function to [re]initialize and zero fill the step counter array (function body has further comments)
+    walk();                                                                            // function performs marker progression (see body for more detail)
+    minCounter[i] = getMin();                                                          // get minimum visits values for each run
+    maxCounter[i] = getMax();                                                          // get maximum visits values for each run
+    stepCounter[i] = steps.value;                                                      // get steps taken value for each run
+    // create output elements which normally appear
+    document.getElementById("min").innerHTML = getMin().toLocaleString();              // write minimum visits to document
+    document.getElementById("max").innerHTML = getMax().toLocaleString();              // write maximum visits to document
+    getFinishCondition();
+  }
+  stats = avgStats(runs.value);                                                        // seed local array with stats returned in array form
+  document.getElementById("runs1").innerHTML = runs.value.toLocaleString();            // write newest runs to document
+  document.getElementById("minAvg").innerHTML = stats[0].toLocaleString(undefined, {minimumFractionDigits: 3});                   // write minimum steps avg with 3 significant digits
+  document.getElementById("maxAvg").innerHTML = stats[2].toLocaleString(undefined, {minimumFractionDigits: 3});                   // write maximum steps avg with 3 significant digits
+  document.getElementById("stepsAvg").innerHTML = stats[4].toLocaleString(undefined, {minimumFractionDigits: 3});                 // write steps avg with 3 significant digits
+  document.getElementById("totalSteps").innerHTML = stats[5].toLocaleString();         // write total steps
+  document.getElementById("maxTotalSteps").innerHTML = stats[8].toLocaleString();      // write maximum steps in any run
+  document.getElementById("overallMin").innerHTML = stats[7].toLocaleString();         // write overall minimum steps
+  document.getElementById("overallMax").innerHTML = stats[6].toLocaleString();         // write overall maximum steps
+  /* set values to be used in building histogram data array
+  overallMin.value = stats[7];
+  overallMax.value = stats[6];
+  overallAvg.value = stats[4]; */
+  /* Draw histograms */
+  document.getElementById("complete").innerHTML = "Simulation Completed";														      // write complete message to document
+  currentDiv(1);
+  showHistograms();
+  document.getElementById("overMax").innerHTML = overMaxSteps.value.toLocaleString();                    // populate overMaxSteps DOM element
+}
+/* End doSimulation function */
+
+/*
+Begin walk function
+Walk function exists to simulate the beginning of a walk
+Position and steps are reset here to signal the beginning of a walk
+Step function called within simulates individual steps
+*/
+function walk(){
+  steps.value = 0;             // declared above, initialized each time a new walk begins
+	xCoord.value = 0;            // declared above, initialized each time a new walk begins
+	yCoord.value = 0;            // declared above, initialized each time a new walk begins
+  step();                      // take steps (see function body for further comments)
+  document.getElementById("steps").innerHTML = steps.value.toLocaleString();         // write number of steps taken to document
+}
+/* End walk function */
+
+/*
+Begin step function
+Step function to take single steps in a loop until destination is reached or
+maximum allowable number of steps have been taken
+*/
+function step(){
+  for (j = 0; j < maxSteps.value; j++){               // step until the maximum allowable number of steps has been taken
+    if(isDestinationReached()){                       // check to see if destination is reached (see function body for further comments)
+      break;                                          // exit loop if destination is reached
+    }
+    var direction = Math.floor((1 + (Math.random() * 4)));  // random number (1, 2, 3, 4) generated to indicate North/Up, East/Right, South/Down and West/Left respectively
+		if (direction == 1){ 								// North/Up movement
+			if (yCoord.value < maxYIdx.value){						  // moving up while not at the top is allowed
+				yCoord.value++;												        // coordinate adjusted to mimic movement of a single cell
+				steps.value++;												        // step counted
+				cellCounts[xCoord.value][yCoord.value]++;	  	// new cell counter incremented to reflect visit
+			}
+			else {															            // no upward movement allowed (from y = 9)
+				steps.value++;
+				cellCounts[xCoord.value][yCoord.value]++;
+			}
+		}
+		else if (direction == 2){ 					// East/Right movement
+			if (xCoord.value < maxXIdx.value){							// moving right while not at the far right is allowed
+				xCoord.value++;
+				steps.value++;
+				cellCounts[xCoord.value][yCoord.value]++;
+			}
+			else {															            // no rightward movement allowed (from x = 9)
+				steps.value++;
+				cellCounts[xCoord.value][yCoord.value]++;
+			}
+		}
+		else if (direction == 3){ 					// South/Down movement
+			if (yCoord.value == MINYIDX){						        // no downward movement allowed (from y = 0)
+				steps.value++;
+				cellCounts[xCoord.value][yCoord.value]++;
+			}
+			else {				                                  // moving down while not at the bottom is allowed
+				yCoord.value--;
+				steps.value++;
+				cellCounts[xCoord.value][yCoord.value]++;
+			}
+		}
+		else if (direction == 4){ 					// West/Left movement
+			if (xCoord.value == MINXIDX){						         // moving left while at the far left is not allowed
+				steps.value++;
+				cellCounts[xCoord.value][yCoord.value]++;
+			}
+			else {														               // moving left while not at the far left is allowed
+				xCoord.value--;
+				steps.value++;
+				cellCounts[xCoord.value][yCoord.value]++;
+			}
+		}
+  }
+}
+/* End step function */
+
+/*
+Begin initArray function
+Used to initialize and zero fill array used for counting grid visits
+*/
+function initArray(){
+	for (k = MINXIDX; k < width.value; k++){				// loop to create variable dimensional 2D array using height and width
+		cellCounts[k] = [];
+		for (p = MINYIDX; p < height.value; p++){
+			cellCounts[k][p] = 0;									      // zero fill/initialize
+		}
+	}
+	cellCounts[MINXIDX][MINYIDX] = 1; 				      // starting in lower left inherently gives that cell a count of 1
+}
+/* End initArray function */
+
+/*
+Begin initRunStats function
+Used to initialize and zero fill arrays used for holding individual run statistics
+*/
+function initRunStats(){
+	for (v = 0; v < runs.value; v++){				// loop to create and zero fill variable length arrays using number of runs
+    minCounter[v] = 0;                    // array to hold minimum cell visits count for each run
+    maxCounter[v] = 0;                    // array to hold maximum cell visits count for each run
+    stepCounter[v] = 0;                   // array to hold step count count for each run
+  }
+}
+/* End initRunStats function */
+
+/*
+Begin avgStats function
+Used to iterate through arrays holding run statistics and average each
+Literal 0s used to initialize variables since all summation and averages
+should begin from zero when called. number of runs passed in.
+*/
+function avgStats(number){
+  /* temo variables to be used function internal */
+  var minTemp = 0;
+  var maxTemp = 0;
+  var stepsTemp = 0;
+  /* array to contain final stats which will be returned to caller */
+  var statValues = [0, 0, 0, 0, 0, 0, 0, maxSteps.value, 0];
+  /* loop through all runs/numbers */
+  for (a = 0; a < number; a++){
+    /* compound min, max and steps */
+    minTemp += minCounter[a];
+    maxTemp += maxCounter[a];
+    stepsTemp += stepCounter[a];
+    /* compare and store overall minimum visits */
+    if (minCounter[a] <= statValues[7]){
+      statValues[7] = minCounter[a];
+    }
+    /* compare and store overall maximum visits */
+    if (maxCounter[a] >= statValues[6]){
+      statValues[6] = maxCounter[a];
+    }
+    /* compare and store maximum steps */
+    if (stepCounter[a] >= statValues[8]){
+      statValues[8] = stepCounter[a];
+    }
+  }
+  /* store mins, maxs and steps and calculate averages and store */
+  statValues[0] = minTemp/number;           // minAvg (avg of all min visits)
+  statValues[1] = minTemp;                  // total of all mins. not used in final version (was used for proofing math/logic)
+  statValues[2] = maxTemp/number;           // maxAvg (avg of all max visits)
+  statValues[3] = maxTemp;                  // total of all maxs. not used in final version (was used for proofing math/logic)
+  statValues[4] = stepsTemp/number;         // stepsAvg (avg of all steps taken)
+  statValues[5] = stepsTemp;                // total of all steps
+  // statValues[6] is max visits to any cell for all runs
+  // statValues[7] is min visits to any cell for all runs
+  // statValues[8] is max steps taken by any run
+  /* return stats array to caller */
+  return statValues;
+}
+/* End avgStats function */
+
+/*
+Begin prepGoogleStepsData function
+Used to create array to pass to Steps Totals Histogram
+parameters are stepCounter[] and runs.value
+returns array containing Run # and step count for each run
+*/
+function prepGoogleStepsData(inputStepsArr, stepsCount){
+  var googleStepsData = [];                                     // create local array to be returned to caller
+  overMaxSteps.value = 0;                                       // used to count runs exceeding maxSteps when thrown out below
+  googleStepsData[0] = ["Run Number", "Number of Steps"];       // seed data field identifiers
+  for (b = 0; b < stepsCount; b++){                             // loop through and create an element for each run
+      if (inputStepsArr[b] < maxSteps.value){                   // check to see if run exceeded maxSteps
+        googleStepsData[b+1] = ["Run " + b, inputStepsArr[b]];  // add identifier and data to each record if usable
+      }
+      else {
+        googleStepsData[b+1] = [null,null];                     // nullify data for this run if exceeded maxSteps (effectively discarding)
+        overMaxSteps.value++;                                   // increase count of runs over maxSteps
+      }
+  }
+  return googleStepsData;                                       // return completed array to caller
+}
+/* End prepGoogleStepsData */
+
+/*
+Begin prepGoogleMaxsData function
+Used to create array to pass to Minimums Histogram
+parameters are minCounter[] and runs.value
+returns array containing Run # and cell minimum visits for each run
+*/
+function prepGoogleMaxsData(inputMaxsArr, maxsCount){
+  var googleMaxsData = [];                                                // create local array to be returned to caller
+  googleMaxsData[0] = ["Run Number", "Maximum Steps Taken In a Cell"];    // seed data field identifiers
+  for (c = 0; c < maxsCount; c++){                                        // loop through and create an element for each run
+        googleMaxsData[c+1] = ["Run " + c, inputMaxsArr[c]];              // add identifier and data to each record
+  }
+  return googleMaxsData;                                                  // return completed array to caller
+}
+/* End prepGoogleMaxsData */
+
+
+/*
+Begin getMin function
+Used to return grid position with minimum visits counted
+*/
+function getMin(){
+	var minimum = maxSteps.value;											 // minimum vlaue set to high value to facilitate meaningful comparison
+  for (r = MINXIDX; r < width.value; r++){			     // loop through 2D array
+		for (s = MINYIDX; s < height.value; s++){
+			if (cellCounts[r][s] <= minimum){				       // if cell counter is less than or equal to minimum
+				minimum = cellCounts[r][s];						       // accept new minimum
+			}
+		}
+	}
+  return minimum;
+}
+/* End getMin function */
+
+/*
+Begin getMax function
+Used to return grid position with maximum visits counted
+*/
+function getMax(){
+  var maximum = 0;																	// maximum value set to low value to facilitate meaningful comparison
+  for (q = MINXIDX; q < width.value; q++){			    // loop through 2D array
+    for (t = MINYIDX; t < height.value; t++){
+      if (cellCounts[q][t] >= maximum){				      // if cell counter is greater than or equal to maximum
+        maximum = cellCounts[q][t];						      // accept new maximum
+      }
+    }
+  }
+  return maximum;
+}
+/* End getMax function */
+
+/*
+Begin isDestinationReached function
+Used to check to see if the upper right corner of the grid has been reached
+*/
+function isDestinationReached(){
+  var destination;                               // return value variable
+  if (xCoord.value == maxXIdx.value && yCoord.value == maxYIdx.value){    // has the marker reached the max X and Y indicies simultaneously
+    destination = true;                          // that is the upper, right corner set destination to true
+  }
+  else {
+    destination = false;                         // otherwise destination reached is still false
+  }
+  return destination;                            // return result to caller
+}
+/* End isDestinationReached function */
+
+/*
+Begin destinationAtMaxSteps function
+Used to check to see if the upper right corner of the grid has been reached
+at the same time maximum allowable number of steps has been taken
+*/
+function destinationAtMaxSteps(){
+  var bothMet;                                            // return value variable
+  if (steps.value == maxSteps.value && isDestinationReached()){	    // if step count is at maximum and destination is true
+    bothMet = true;																			  // set flag indicating such
+  }
+  else {
+    bothMet = false;                                      // otherwise the both conditions were not met
+  }
+  return bothMet;                                         // return result to caller
+}
+/* End destinationAtMaxSteps function */
+
+/*
+Begin getFinishCondition function
+Used to display the condition[s] under which the simulation finished
+*/
+function getFinishCondition(){
+  var returnval;
+  // if maximum allowable number of steps and max x,y coordinate landing are simultaneous create the element for the html
+  if (destinationAtMaxSteps()){
+    document.getElementById("completePerfectRun").innerHTML = steps.value.toLocaleString() + "th step landed on [" + xCoord.value + "," + yCoord.value +"]";
+    returnval = "completePerfect";
+  }
+  // if maximum allowable number of steps comes beofre max x,y coordinate landing, indicate position
+  else if (steps.value == maxSteps.value){
+    document.getElementById("incompleteRun").innerHTML = "Took " + steps.value.toLocaleString() + " steps before destination was reached";
+    returnval = "incomplete";
+  }
+  // if  max x,y coordinate landing comes before maximum allowable number of steps, report max x,y coordinate and number of steps it took to get there
+  else {
+    document.getElementById("completeRun").innerHTML = "Reached destination of [" + xCoord.value + "," + yCoord.value +"] before " + maxSteps.value.toLocaleString() + " steps";
+    returnval = "complete";
+  }
+}
+/* End getFinishCondition function */
+
+/*
+Input Data validation functions
+*******************************
+Begin validateX function
+*/
+function validateX(){
+  var result;                                         // return value variable
+  /* verify integer input is within my arbitrarily established range of 1 - 2000
+  if validation fails, disable buttons, provide feedback and return result to caller */
+  if (!isInteger(document.getElementById("usrX").value) || document.getElementById("usrX").value < MININTINPUT || document.getElementById("usrX").value > MAXXYINPUT){
+    document.getElementById("xValidation").innerHTML = "Invalid entry for x value. Please enter an integer [1-2000].";
+    document.getElementById("submit").disabled = true;
+    document.getElementById("run").disabled = true;
+    result = false;
+  }
+  /* if validation passes, clear feedback, enable "Accept Input" button and return result to caller */
+  else {
+    document.getElementById("xValidation").innerHTML = "";
+    document.getElementById("submit").disabled = false;
+    result = true;
+  }
+  return result;
+}
+/* End validateX function */
+
+/*
+Begin validateY function
+*/
+function validateY(){
+  var result;                                         // return value variable
+  /* verify integer input is within my arbitrarily established range of 1 - 2000
+  if validation fails, disable buttons, provide feedback and return result to caller */
+  if (!isInteger(document.getElementById("usrY").value) || document.getElementById("usrY").value < MININTINPUT || document.getElementById("usrY").value > MAXXYINPUT){
+    document.getElementById("yValidation").innerHTML = "Invalid entry for y value. Please enter an integer [1-2000].";
+    document.getElementById("submit").disabled = true;
+    document.getElementById("run").disabled = true;
+    result = false;
+  }
+  /* if validation passes, clear feedback, enable "Accept Input" button and return result to caller */
+  else {
+    document.getElementById("yValidation").innerHTML = "";
+    document.getElementById("submit").disabled = false;
+    result = true;
+  }
+  return result;
+}
+/* End validateY function */
+
+/*
+Begin validateNum function
+*/
+function validateNum(){
+  var result;                                         // return value variable
+  /* verify integer input is within my arbitrarily established range of 1 - 5000
+  if validation fails, disable buttons, provide feedback and return result to caller */
+  if (!isInteger(document.getElementById("usrNum").value) || document.getElementById("usrNum").value < MININTINPUT || document.getElementById("usrNum").value > MAXRUNSINPUT){
+    document.getElementById("numValidation").innerHTML = "Invalid entry for number of runs. Please enter an integer [1-5000].";
+    document.getElementById("submit").disabled = true;
+    document.getElementById("run").disabled = true;
+    result = false;
+  }
+  /* if validation passes, clear feedback, enable "Accept Input" button and return result to caller */
+  else {
+    document.getElementById("numValidation").innerHTML = "";
+    document.getElementById("submit").disabled = false;
+    result = true;
+  }
+  return result;
+}
+/* End validateNum function */
+
+/*
+Begin isInteger function
+simple function to check whether input is of integer form
+*/
+function isInteger(x){
+  /* if the checked number modulo 1 is the same type and value of 0
+  then it must be an integer since all numbers are divisible by 1 with no remainder */
+  return x % 1 === 0;
+}
+/* End isInteger function */
+/*
+******************************
+End data validation functions
+*/
+
+/*
+Begin clearLowerDOM function
+Used to clear statistics in the lower area from previous runs
+*/
+function clearLowerDOM(){
+  document.getElementById("steps").innerHTML = "";
+  document.getElementById("runs1").innerHTML = "";
+  document.getElementById("minAvg").innerHTML = "";
+  document.getElementById("maxAvg").innerHTML = "";
+  document.getElementById("stepsAvg").innerHTML = "";
+  document.getElementById("totalSteps").innerHTML = "";
+  document.getElementById("maxTotalSteps").innerHTML = "";
+  document.getElementById("overallMin").innerHTML = "";
+  document.getElementById("overallMax").innerHTML = "";
+  document.getElementById("submitStatusOk").innerHTML = "";
+  document.getElementById("submitStatusWarn").innerHTML = "";
+  document.getElementById("completeRun").innerHTML = "";
+  document.getElementById("incompleteRun").innerHTML = "";
+  document.getElementById("completePerfectRun").innerHTML = "";
+  document.getElementById("min").innerHTML = "";
+  document.getElementById("max").innerHTML = "";
+  document.getElementById("overMax").innerHTML = "";
+}
+/* End clearLowerDOM function */
+
+/*
+Begin clearFeedback function
+Used to clear input and run conditions feedback which was previously provided
+*/
+function clearFeedback(){
+  /* Clear previous run feedback via DOM elements*/
+  document.getElementById("submitStatusOk").innerHTML = "";
+  document.getElementById("submitStatusWarn").innerHTML = "";
+  document.getElementById("completeRun").innerHTML = "";
+  document.getElementById("incompleteRun").innerHTML = "";
+  document.getElementById("completePerfectRun").innerHTML = "";
+  document.getElementById("complete").innerHTML = "";
+}
+/* End clearFeedback function */
+
+</script>
+
+
+<!--
+Histogram Definition
+*******************************
+Uses Google Charts to render Steps histogram
+-->
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+
+  google.charts.load("current", {packages:["corechart"]});
+  google.charts.setOnLoadCallback(drawStepsChart);
+  google.charts.setOnLoadCallback(drawMaxsChart);
+
+/*
+Begin drawStepsChart function
+Used to draw chart by passing data array to google charts
+data variable is declared and initialized by calling the function prepGoogleStepsData as a parameter (with its own parameters)
+various options set by declaring an options variable before passing the data and option to the internal draw function
+*/
+function drawStepsChart() {
+  /* Create data using prepGoogleStepsData function and feed to Google table */
+  var stepsData = google.visualization.arrayToDataTable(prepGoogleStepsData(stepCounter, runs.value));
+  var stepsOptions = {
+    title: "Distribution of Steps Taken",                   // Chart title
+    width: 1280,                                   // size of chart
+    height: 500,
+    legend: {
+      position: 'top'
+    },
+    colors: ['#AA00FF'],                                    // Color of bars
+    hAxis: {
+      slantedText: true,
+      slantedTextAngle: 30,
+      title: "Number of Steps Taken",                       // X axis title
+    },
+    vAxis: {
+      title: "Runs In Range"                                // Y axis title
+    },
+    bar: {
+      gap: 2,                                               // gap between data plots
+    },
+    histogram: {
+    },
+    dataOpacity: .2                                         // data plot opacity (0 default is solid)
+  };
+  var stepsChart = new google.visualization.Histogram(document.getElementById('stepsChart'));
+  stepsChart.draw(stepsData, stepsOptions);                 // draw chart with data and options from above
+ }
+ /* End drawStepsChart function */
+
+ /*
+ Begin drawMaxsChart function
+ Used to draw chart by passing data array to google charts
+ data variable is declared and initialized by calling the function prepGoogleMaxsData as a parameter (with its own parameters)
+ various options set by declaring an options variable before passing the data and option to the internal draw function
+ */
+function drawMaxsChart() {
+   /* Create data using prepGoogleMaxsData function and feed to Google table */
+   var maxsData = google.visualization.arrayToDataTable(prepGoogleMaxsData(maxCounter, runs.value));
+   var maxsOptions = {
+     title: "Distribution of Maximum Visits Values",     // Chart title
+     width: 1280,                                   // size of chart
+     height: 500,
+     legend: {
+       position: 'top'
+     },
+     colors: ['#FF0000'],                             // Color of bars
+     hAxis: {
+       slantedText: true,
+       slantedTextAngle: 30,
+       title: "Maximum Visits To a Cell"              // X axis title
+     },
+     vAxis: {
+       title: "Runs In Range"                         // Y axis title
+     },
+     bar: {
+       gap: 2,                                        // gap between data plots
+     },
+     dataOpacity: .2                                  // data plot opacity (0 default is solid)
+   };
+   var maxsChart = new google.visualization.Histogram(document.getElementById('maxChart'));
+   maxsChart.draw(maxsData, maxsOptions);             // draw chart with data and options from above
+  }
+  /* End drawMaxsChart function */
+
+function plusDivs(n) {
+  showHistograms(slideIndex += n);
+  window.location.href = "#bottom";
+}
+
+function currentDiv(n) {
+  showHistograms(slideIndex = n);
+  window.location.href = "#bottom";
+}
+
+function showHistograms(n) {
+      var g;
+      var h = document.getElementsByClassName("chartSlides");
+      var buttons = document.getElementsByClassName("num");
+      drawStepsChart();
+      drawMaxsChart();
+
+      if (n > h.length) {
+        slideIndex = 1;
+      }
+      if (n < 1) {
+        slideIndex = h.length;
+      }
+      for (g = 0; g < h.length; g++) {
+        h[g].style.display = "none";
+      }
+      for (g = 0; g < buttons.length; g++) {
+        buttons[g].className = buttons[g].className.replace(" red", "");
+      }
+      h[slideIndex - 1].style.display = "block";
+      buttons[slideIndex - 1].className += " red";
+  }
+</script>
+
+<center>
+  <div class="chartSlides" id="stepsChart"></div>    <!-- Histogram placement/properties div -->
+  <div class="chartSlides" id="maxChart"></div><br>
+  <div class="chartSlides" id="runsData">
+    <u><b>Runs</b></u>
+    <br>
+    Runs performed:																		               <!-- display number of runs -->
+    <br>
+    <element id="runs1"></element>
+    <br>
+    Number which exceeded maximum allowable number of steps:
+    <br>
+    <element id="overMax"></element>
+    <br><br>
+  </div>
+  <div class="chartSlides" id="stepsData">
+    <u><b>Step Numbers Stats</b></u>
+    <br>
+    Steps taken this run:																		         <!-- display steps taken this run -->
+    <br>
+    <element id="steps"></element>
+    <br>
+    Maximum steps taken by a run:                                    <!-- display maximum steps taken in any run -->
+    <br>
+    <element id="maxTotalSteps"></element>
+    <br>
+    Total steps taken over all runs:                                 <!-- display total steps taken -->
+    <br>
+    <element id="totalSteps"></element>
+    <br>
+    Average steps per run:															             <!-- display average steps taken over all runs -->
+    <br>
+    <element id="stepsAvg"></element>
+    <br><br>
+  </div>
+<div class="chartSlides" id="minsData">
+  <u><b>Step Minimums Stats</b></u>
+  <br>
+  Minimum number of steps taken in any one cell this run:	                 <!-- display minimum steps taken in any cell this run -->
+  <br>
+  <element id="min"></element>
+  <br>
+  Average of minimum steps in any one cell over all runs:					         <!-- display minimum average steps in any cell over all runs -->
+  <br>
+  <element id="minAvg"></element>
+  <br>
+  Minimum number of steps taken in any one cell by a run:		               <!-- display minimum steps in any cell over all runs -->
+  <br>
+  <element id="overallMin"></element>
+  <br><br>
+</div>
+<div class="chartSlides" id="maxsData">
+  <u><b>Step Maximums Stats</b></u>
+  <br>
+  Maximum number of steps taken in any one cell this run:	                 <!-- display maximum steps in any cell this run-->
+  <br>
+  <element id="max"></element>
+  <br>
+  Average of maximum steps in any one cell over all runs:						       <!-- display maximum average steps in any cell over all runs -->
+  <br>
+  <element id="maxAvg"></element>
+  <br>
+  Maximum number of steps taken in any one cell by a run:		               <!-- display maximum  steps in any cell over all runs-->
+  <br>
+  <element id="overallMax"></element>
+  <br><br>
+</div>
+
+  <button class="btn" onclick="plusDivs(-1)">< Prev</button>
+  <button class="btn" onclick="plusDivs(1)">Next ></button>
+  <br><br>
+  <button class="btn num" onclick="currentDiv(1)">1</button>
+  <button class="btn num" onclick="currentDiv(2)">2</button>
+  <button class="btn num" onclick="currentDiv(3)">3</button>
+  <button class="btn num" onclick="currentDiv(4)">4</button>
+  <button class="btn num" onclick="currentDiv(5)">5</button>
+  <button class="btn num" onclick="currentDiv(6)">6</button>
+</center>
+      <!-- Histogram placement/properties div -->
+
+<!-- Lower DOM area to display run statistics -->
+<p style="font-family:arial;">
+  <br>
+  <u><b>Conditions under which runs completed</b></u>
+  <br>
+  <h2 style="color:#FF0000;" id="incompleteRun"></h2> 	        <!-- display finish condition created by function in red -->
+  <h2 style="color:#00FF00;" id="completeRun"></h2> 	          <!-- display finish condition created by function in red -->
+  <h2 style="color:#00FF00;" id="completePerfectRun"></h2> 	    <!-- display finish condition created by function in red -->
+  <br><br>
+</p>
+<!-- End lower DOM -->
+<a name="bottom"></a>
+</body>
+</html>
